@@ -1,0 +1,49 @@
+# ろーかる変数定義
+locals {
+  example_instance_type = "t3.micro"
+}
+
+# データソース定義
+data "aws_ami" "recent_amazon_linux_2" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-2.0.????????-x86_64-gp2"]
+  }
+
+  filter {
+    name   = "state"
+    values = ["available"]
+  }
+}
+
+resource "aws_instance" "example" {
+  ami           = data.aws_ami.recent_amazon_linux_2.image_id
+  instance_type = "t3.micro"
+}
+
+# プロバイダー定義
+provider "aws" {
+  region = "ap-northeast-1"
+}
+
+# 参照
+resource "aws_security_group" "example_ec2" {
+  name = "example-ec2"
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
