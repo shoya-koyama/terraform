@@ -31,10 +31,3 @@ resource "aws_iam_role_policy_attachment" "example" {
   role       = aws_iam_role.example.name
   policy_arn = aws_iam_policy.example.arn
 }
-
-module "describe_regions_for_ec2" {
-  source     = "./iam_role"
-  name       = "describe-regions-for-ec2"
-  identifier = "ec2.amazonaws.com"
-  policy     = data.aws_iam_policy_document.allow_describe_regions.json
-}
