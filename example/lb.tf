@@ -31,6 +31,10 @@ output "alb_dns_name" {
   value = aws_lb.example.dns_name
 }
 
+output "alb_url" {
+  value = "http://${aws_lb.example.dns_name}"
+}
+
 # ロードバランサのセキュリティグループを作成する
 module "http_sg" {
   source      = "./security_group"
@@ -75,7 +79,9 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-# Route53: DNSサービス
+/*
+# Route 53 のホストゾーンとDNSレコードを使う場合は、所有ドメインが必要です。
+# 所有ドメインがない間は、上の ALB DNS 名（alb_url）を使います。
 resource "aws_route53_zone" "test_example" {
   name = "test.example.com"
 }
@@ -98,7 +104,9 @@ resource "aws_route53_record" "example" {
 output "domain_name" {
   value = aws_route53_record.example.name
 }
+*/
 
+/*
 # HTTPS化するためのSSL証明書をACMで作成する。SSL証明書の自動更新が可能。
 resource "aws_acm_certificate" "example" {
   domain_name               = aws_route53_record.example.name
@@ -176,9 +184,10 @@ resource "aws_lb_listener" "redirect_http_to_https" {
     }
   }
 }
+*/
 
 resource "aws_lb_target_group" "example" {
-  name                 = "example"
+  name = "example"
   # ECS Fargateを使用する場合、ターゲットタイプはipを指定する必要があります。
   target_type          = "ip"
   vpc_id               = aws_vpc.example.id
@@ -188,23 +197,24 @@ resource "aws_lb_target_group" "example" {
 
   health_check {
     # ヘルスチェックのパスを指定する。
-    path                = "/"
+    path = "/"
     # 正常判定を行うまでのヘルスチェックの実行回数を指定する。
-    healthy_threshold   = 5
+    healthy_threshold = 5
     # 異常判定を行うまでのヘルスチェックの実行回数を指定する。
     unhealthy_threshold = 2
     timeout             = 5
     interval            = 30
     matcher             = 200
     # 80となる。
-    port                = "traffic-port"
-    protocol            = "HTTP"
+    port     = "traffic-port"
+    protocol = "HTTP"
   }
 
   # エラーを回避するために、ALBの作成が完了するまで待機するように設定する。
   depends_on = [aws_lb.example]
 }
 
+/*
 resource "aws_lb_listener_rule" "example" {
   listener_arn = aws_lb_listener.https.arn
   # リスナーの優先度を指定する。優先度は1から50000までの整数値で指定する必要があります。優先度が低いほど、リクエストがルールにマッチしやすくなります。
@@ -221,3 +231,4 @@ resource "aws_lb_listener_rule" "example" {
     }
   }
 }
+*/
