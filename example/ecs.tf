@@ -12,6 +12,8 @@ resource "aws_ecs_task_definition" "example" {
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   container_definitions    = file("./container_definitions.json")
+  # DockerコンテナがCloud Watch Logsにログを投げられるようにする。
+  execution_role_arn       = module.ecs_task_execution_role.iam_role_arn
 }
 
 # 通常、コンテナを起動しても、処理が完了したらすぐに終了する。それを防ぐため、ECSサービスを使う。
@@ -45,10 +47,10 @@ resource "aws_ecs_service" "example" {
     container_port   = 80
   }
 
-  lifecycle {
-    # タスク定義が更新された場合に、ECSサービスを更新する際に、タスク定義の変更を無視するように設定する。これにより、タスク定義が更新されても、ECSサービスは既存のタスクを維持し、新しいタスクを起動しないようになります。
-    ignore_changes = [task_definition]
-  }
+  # lifecycle {
+  #   # タスク定義が更新された場合に、ECSサービスを更新する際に、タスク定義の変更を無視するように設定する。これにより、タスク定義が更新されても、ECSサービスは既存のタスクを維持し、新しいタスクを起動しないようになります。
+  #   ignore_changes = [task_definition]
+  # }
 
   depends_on = [aws_lb_listener.http]
 }
@@ -60,3 +62,33 @@ module "nginx_sg" {
   port        = 80
   cidr_blocks = [aws_vpc.example.cidr_block]
 }
+
+resource "aws_cloudwatch_log_group" "for_ecs" {
+  name              = "/ecs/example"
+  retention_in_days = 180
+}
+
+# ECSタスク実行 IAMロール
+data "aws_iam_policy" "ecs_task_execution_role_policy" {
+  arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+data "aws_iam_policy_document" "ecs_task_execution" {
+  # 既存のポリシーを継承
+  source_json = data.aws_iam_policy.ecs_task_execution_role_policy.policy
+
+  statement {
+    effect    = "Allow"
+    actions   = ["ssm:GetParameters", "kms:Decrypt"]
+    resources = ["*"]
+  }
+}
+
+module "ecs_task_execution_role" {
+  source     = "./iam_role"
+  name       = "ecs-task-execution"
+  # このIAMロールをECSで使うことを宣言
+  identifier = "ecs-tasks.amazonaws.com"
+  policy     = data.aws_iam_policy_document.ecs_task_execution.json
+}
+
