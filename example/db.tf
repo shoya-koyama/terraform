@@ -56,9 +56,10 @@ resource "aws_db_instance" "example" {
   auto_minor_version_upgrade = false
   # 削除保護
   deletion_protection = true
-  # インスタンス削除時のスナップショット作成のため、false
-  skip_final_snapshot = false
-  port                = 3306
+  # 削除時に最終スナップショットを作成する
+  skip_final_snapshot       = false
+  final_snapshot_identifier = "example-final-snapshot"
+  port                      = 3306
   # 即時反映を避ける
   apply_immediately      = false
   vpc_security_group_ids = [module.mysql_sg.security_group_id]
@@ -100,22 +101,22 @@ resource "aws_elasticache_replication_group" "example" {
   replication_group_id          = "example"
   replication_group_description = "Cluster Disabled"
   # redis or memcached
-  engine                        = "redis"
-  engine_version                = "5.0.4"
+  engine         = "redis"
+  engine_version = "5.0.4"
   # ノード数
-  number_cache_clusters         = 3
-  node_type                     = "cache.m3.medium"
-  snapshot_window               = "09:10-10:10"
-  snapshot_retention_limit      = 7
-  maintenance_window            = "mon:10:40-mon:11:40"
+  number_cache_clusters    = 3
+  node_type                = "cache.m3.medium"
+  snapshot_window          = "09:10-10:10"
+  snapshot_retention_limit = 7
+  maintenance_window       = "mon:10:40-mon:11:40"
   # 自動フェイルオーバー
-  automatic_failover_enabled    = true
-  port                          = 6379
+  automatic_failover_enabled = true
+  port                       = 6379
   # ElastiCacheの設定変更のタイミングを制御
-  apply_immediately             = false
-  security_group_ids            = [module.redis_sg.security_group_id]
-  parameter_group_name          = aws_elasticache_parameter_group.example.name
-  subnet_group_name             = aws_elasticache_subnet_group.example.name
+  apply_immediately    = false
+  security_group_ids   = [module.redis_sg.security_group_id]
+  parameter_group_name = aws_elasticache_parameter_group.example.name
+  subnet_group_name    = aws_elasticache_subnet_group.example.name
 }
 
 module "redis_sg" {

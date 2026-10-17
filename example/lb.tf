@@ -6,7 +6,7 @@ resource "aws_lb" "example" {
   # インターネット向けのため, false
   internal     = false
   idle_timeout = 60
-  # 削除保護有効
+  # 削除保護を無効化（削除前に apply が必要）
   enable_deletion_protection = true
 
   subnets = [
